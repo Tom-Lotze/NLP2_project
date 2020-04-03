@@ -2,7 +2,7 @@
 # @Author: TomLotze
 # @Date:   2020-04-03 16:25
 # @Last Modified by:   TomLotze
-# @Last Modified time: 2020-04-03 20:30
+# @Last Modified time: 2020-04-03 21:37
 
 
 from math import isclose
@@ -50,12 +50,15 @@ def create_ruleset(terminals):
     ruleset = dict()
 
     ruleset['S'] = {'Fu S': 6/12, 'Fb Y S': 1/12, 'X': 5/12}
-    ruleset['Fu'] = {'F1': 1/6, 'F2': 1/6, 'F3': 1/6,
-                     'B1': 1/6, 'B2': 1/6, 'B3': 1/6}
-    ruleset['Fb'] = {'SHIFT' : 1.0}
+    ruleset['Fu'] = {'F1': 1/9, 'F2': 1/9, 'F3': 1/9,
+                     'B1': 1/9, 'B2': 1/9, 'B3': 1/9,
+                     "R" : 1/9, "@" : 1/9, "#" : 1/9}
+    ruleset['Fb'] = {'SHIFT ' : 1.0}
     ruleset['Y'] = {letter : 1/nr_letters for letter in terminals}
 
     ruleset['X'] = {'X X': 1/4, 'Y': 3/4}
+
+    # Maybe an append or plus operator
 
     # validate the ruleset
     for dic in ruleset.values():
@@ -66,6 +69,8 @@ def create_ruleset(terminals):
 
 
 def generator(ruleset, nr_samples, terminals, operators):
+    list_of_samples = []
+
     for i in range(nr_samples):
         sample = "S"
         cont = True
@@ -73,7 +78,23 @@ def generator(ruleset, nr_samples, terminals, operators):
         while cont:
             sample, cont = expand_sample(sample, ruleset, terminals, operators)
 
-        print(sample)
+        # modify to remove spaces in seq
+        out = ""
+        prev_token = None
+
+        for token in sample.split():
+            if token not in terminals or prev_token == "SHIFT":
+                out += token + " "
+            else:
+                out += token
+            prev_token = token
+
+
+
+        # print(out)
+        list_of_samples.append(out)
+
+    return list_of_samples
 
 
 
@@ -99,20 +120,32 @@ def expand_sample(sample, ruleset, terminals, operators):
 def choose_rule(ruleset, token):
     options = ruleset[token]
     chosen_rule = np.random.choice(list(options.keys()), p=list(options.values()))
+    # print(f".{chosen_rule}.")
 
     return chosen_rule
 
 
 
+def parser(string, operators, terminals):
+    splitted = string.split()
+    if len(splitted) == 1:
+        return splitted[0]
+
+    seq = splitted[-1]
+    operations = splitted[:-1]
 
 
-def parser(seq):
-    splitted = seq.split()
-
-    for token in splitted:
+    for token in operations[::-1]:
         if token in operators.keys():
             operator_fn = operators[token]
+            if operator_fn != shift:
+                seq = operator_fn(seq)
+            else:
+                seq = operator_fn(seq, shift_factor)
+        else: # shift is the next one
+            shift_factor = terminals.index(token)
 
+    return seq
 
 
 
@@ -126,8 +159,13 @@ if __name__ == "__main__":
              "SHIFT": shift}
 
 
-    generator(ruleset, 40, terminals, operators)
+    samples = generator(ruleset, 100, terminals, operators)
 
+    labels = [parser(seq, operators, terminals) for seq in samples]
+
+    with open("generated_data.txt", "w") as f:
+        for x, y in zip(samples, labels):
+            f.write(f"{x}.{y}\n")
 
 
 
