@@ -2,7 +2,7 @@
 # @Author: TomLotze
 # @Date:   2020-04-03 16:25
 # @Last Modified by:   TomLotze
-# @Last Modified time: 2020-04-03 20:11
+# @Last Modified time: 2020-04-03 20:30
 
 
 from math import isclose
@@ -49,7 +49,7 @@ def create_ruleset(terminals):
     nr_letters = len(terminals)
     ruleset = dict()
 
-    ruleset['S'] = {'Fu S': 6/12, 'Fb S Y': 1/12, 'X': 5/12}
+    ruleset['S'] = {'Fu S': 6/12, 'Fb Y S': 1/12, 'X': 5/12}
     ruleset['Fu'] = {'F1': 1/6, 'F2': 1/6, 'F3': 1/6,
                      'B1': 1/6, 'B2': 1/6, 'B3': 1/6}
     ruleset['Fb'] = {'SHIFT' : 1.0}
@@ -62,7 +62,6 @@ def create_ruleset(terminals):
         assert(isclose(sum(dic.values()), 1))
 
     return ruleset
-
 
 
 
