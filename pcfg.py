@@ -2,7 +2,7 @@
 # @Author: TomLotze
 # @Date:   2020-04-03 16:25
 # @Last Modified by:   TomLotze
-# @Last Modified time: 2020-04-03 21:37
+# @Last Modified time: 2020-04-04 11:39
 
 
 from math import isclose
@@ -32,7 +32,7 @@ def backward_2(seq):
     return shift(seq, -2)
 
 def backward_3(seq):
-    return shift(seq, -2)
+    return shift(seq, -3)
 
 def reverse(seq):
     return seq[::-1]
@@ -49,14 +49,14 @@ def create_ruleset(terminals):
     nr_letters = len(terminals)
     ruleset = dict()
 
-    ruleset['S'] = {'Fu S': 6/12, 'Fb Y S': 1/12, 'X': 5/12}
+    ruleset['S'] = {'Fu S': 8/12, 'Fb Y S': 2/12, 'X': 2/12}
     ruleset['Fu'] = {'F1': 1/9, 'F2': 1/9, 'F3': 1/9,
                      'B1': 1/9, 'B2': 1/9, 'B3': 1/9,
                      "R" : 1/9, "@" : 1/9, "#" : 1/9}
     ruleset['Fb'] = {'SHIFT ' : 1.0}
     ruleset['Y'] = {letter : 1/nr_letters for letter in terminals}
 
-    ruleset['X'] = {'X X': 1/4, 'Y': 3/4}
+    ruleset['X'] = {'X X': 3/8, 'Y': 5/8}
 
     # Maybe an append or plus operator
 
@@ -71,7 +71,7 @@ def create_ruleset(terminals):
 def generator(ruleset, nr_samples, terminals, operators):
     list_of_samples = []
 
-    for i in range(nr_samples):
+    while len(list_of_samples) < nr_samples:
         sample = "S"
         cont = True
 
@@ -89,13 +89,17 @@ def generator(ruleset, nr_samples, terminals, operators):
                 out += token
             prev_token = token
 
-
-
-        # print(out)
-        list_of_samples.append(out)
+        if validate_string(out):
+            list_of_samples.append(out)
 
     return list_of_samples
 
+
+def validate_string(string):
+    if len(string) > 20:
+        return False
+
+    return True
 
 
 def expand_sample(sample, ruleset, terminals, operators):
