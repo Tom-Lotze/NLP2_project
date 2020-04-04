@@ -2,7 +2,7 @@
 # @Author: TomLotze
 # @Date:   2020-04-03 16:25
 # @Last Modified by:   TomLotze
-# @Last Modified time: 2020-04-04 12:08
+# @Last Modified time: 2020-04-04 12:14
 
 
 from math import isclose
@@ -148,15 +148,16 @@ def parser(string, operators, terminals):
     operations = splitted[:-1]
 
 
-    for token in operations[::-1]:
+    for i, token in enumerate(operations[::-1]):
         if token in operators.keys():
             operator_fn = operators[token]
-            if operator_fn != shift:
-                seq = operator_fn(seq)
-            else if operator_fn == shift:
+            if operator_fn == shift:
                 seq = operator_fn(seq, shift_factor)
-            else: # append operator
-                seq = operator_fn(seq1, seq2)
+            elif operator == append: # append operator
+                prepend_seq = operations[::-1][:i]
+                seq = operator_fn(parser(seq1, operators, terminals), parser(seq, operators, terminals))
+            else:
+                seq = operator_fn(seq)
         else: # shift is the next one
             shift_factor = terminals.index(token)
 
