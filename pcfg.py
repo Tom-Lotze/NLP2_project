@@ -2,7 +2,7 @@
 # @Author: TomLotze
 # @Date:   2020-04-03 16:25
 # @Last Modified by:   TomLotze
-# @Last Modified time: 2020-04-04 13:12
+# @Last Modified time: 2020-04-04 13:23
 
 
 from math import isclose
@@ -52,7 +52,11 @@ def create_ruleset(terminals):
     nr_letters = len(terminals)
     ruleset = dict()
 
-    ruleset['S'] = {'Fu S': 7/12, 'Fb Y S': 1/12, 'X': 3/12, "S + S": 1/12}
+    # ruleset['S'] = {'Fu S': 7/12, 'Fb Y S': 1/12, 'X': 3/12, "S + S": 1/12}
+
+    # very high probability for + for testing, above one is more balanced
+    ruleset['S'] = {'Fu S': 1/12, 'Fb Y S': 1/12, 'X': 5/12, "S + S": 5/12}
+
     ruleset['Fu'] = {'F1': 1/9, 'F2': 1/9, 'F3': 1/9,
                      'B1': 1/9, 'B2': 1/9, 'B3': 1/9,
                      "R" : 1/9, "@" : 1/9, "#" : 1/9}
@@ -143,14 +147,14 @@ def choose_rule(ruleset, token):
 
 
 def parser(string, operators, terminals):
-    print(f"\nstring: .{string}.")
+    # print(f"\nstring: .{string}.")
     splitted = string.split()
 
-    print(f"splitted, len: {splitted}, {len(splitted)}")
+    # print(f"splitted, len: {splitted}, {len(splitted)}")
 
 
     if len(splitted) == 1:
-        print(f"len1 triggered on {splitted}")
+        # print(f"len1 triggered on {splitted}")
         return splitted[0]
 
     #if "+" in splitted:
@@ -162,7 +166,7 @@ def parser(string, operators, terminals):
 
 
     for i, token in enumerate(operations[::-1]):
-        print(f"seq {seq}, token: {token}")
+        # print(f"seq {seq}, token: {token}")
         if token in operators.keys():
             operator_fn = operators[token]
             if operator_fn == shift:
@@ -171,20 +175,20 @@ def parser(string, operators, terminals):
                 # print(f"i: {i}")
                 # print(f"operations: {operations}")
                 prepend_seq = remove_spaces(" ".join(operations[:-i-1]), terminals)
-                print(f"prepend_seq, seq: .{prepend_seq}., .{seq}.")
+                # print(f"prepend_seq, seq: .{prepend_seq}., .{seq}.")
                 # print(f"token: .{token}. string: .{string}.\n")
 
                 seq = operator_fn(parser(prepend_seq, operators, terminals), parser(seq, operators, terminals))
-                print(f"outcome of append: {seq}")
+                # print(f"outcome of append: {seq}")
                 return seq
             else:
                 seq = operator_fn(seq)
         else: # shift is the next open
-            print(f"token: .{token}.")
-            print(f"string: .{string}.")
-            print(f"operations:{operations}\n")
+            # print(f"token: .{token}.")
+            # print(f"string: .{string}.")
+            # print(f"operations:{operations}\n")
 
-            shift_factor = terminals.index(token)
+            shift_factor = terminals.index(token) + 1
 
     return seq
 
