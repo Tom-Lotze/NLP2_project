@@ -2,7 +2,7 @@
 # @Author: TomLotze
 # @Date:   2020-04-03 16:25
 # @Last Modified by:   TomLotze
-# @Last Modified time: 2020-04-04 12:14
+# @Last Modified time: 2020-04-04 13:12
 
 
 from math import isclose
@@ -81,30 +81,37 @@ def generator(ruleset, nr_samples, terminals, operators):
             sample, cont = expand_sample(sample, ruleset, terminals, operators)
 
         # modify to remove spaces in the character string
-        out = ""
-        prev_token = None
+        out = remove_spaces(sample, terminals)
 
-        for token in sample.split():
-            if token not in terminals or prev_token == "SHIFT":
-                if token == "+":
-                    out += " " + token + " "
-                else:
-                    out += token + " "
-            else:
-                out += token
-            prev_token = token
-
-        if validate_string(out):
+        if validate_seq(out):
             list_of_samples.append(out)
 
     return list_of_samples
 
 
-def validate_string(string):
-    if len(string) > 20:
+def validate_seq(seq):
+    if len(seq) > 20:
         return False
 
     return True
+
+
+def remove_spaces(seq, terminals):
+    out = ""
+    prev_token = None
+
+    for token in seq.split():
+        if token not in terminals or prev_token == "SHIFT":
+            if token == "+":
+                out += " " + token + " "
+            else:
+                out += token + " "
+        else:
+            out += token
+        prev_token = token
+
+    return out.strip()
+
 
 
 def expand_sample(sample, ruleset, terminals, operators):
@@ -136,12 +143,18 @@ def choose_rule(ruleset, token):
 
 
 def parser(string, operators, terminals):
+    print(f"\nstring: .{string}.")
     splitted = string.split()
+
+    print(f"splitted, len: {splitted}, {len(splitted)}")
+
+
     if len(splitted) == 1:
+        print(f"len1 triggered on {splitted}")
         return splitted[0]
 
-    if "+" in splitted:
-        print("+ found in following string: {string}")
+    #if "+" in splitted:
+    #   print(f"+ found in following string: {string}")
 
 
     seq = splitted[-1]
@@ -149,16 +162,28 @@ def parser(string, operators, terminals):
 
 
     for i, token in enumerate(operations[::-1]):
+        print(f"seq {seq}, token: {token}")
         if token in operators.keys():
             operator_fn = operators[token]
             if operator_fn == shift:
                 seq = operator_fn(seq, shift_factor)
-            elif operator == append: # append operator
-                prepend_seq = operations[::-1][:i]
-                seq = operator_fn(parser(seq1, operators, terminals), parser(seq, operators, terminals))
+            elif operator_fn == append: # append operator
+                # print(f"i: {i}")
+                # print(f"operations: {operations}")
+                prepend_seq = remove_spaces(" ".join(operations[:-i-1]), terminals)
+                print(f"prepend_seq, seq: .{prepend_seq}., .{seq}.")
+                # print(f"token: .{token}. string: .{string}.\n")
+
+                seq = operator_fn(parser(prepend_seq, operators, terminals), parser(seq, operators, terminals))
+                print(f"outcome of append: {seq}")
+                return seq
             else:
                 seq = operator_fn(seq)
-        else: # shift is the next one
+        else: # shift is the next open
+            print(f"token: .{token}.")
+            print(f"string: .{string}.")
+            print(f"operations:{operations}\n")
+
             shift_factor = terminals.index(token)
 
     return seq
@@ -183,7 +208,8 @@ if __name__ == "__main__":
         for x, y in zip(samples, labels):
             f.write(f"{x}.{y}\n")
 
-
+    # testing specific sentence
+    # parser("aae + B2 e", operators, terminals)
 
 
 
