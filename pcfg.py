@@ -2,7 +2,7 @@
 # @Author: TomLotze
 # @Date:   2020-04-03 16:25
 # @Last Modified by:   TomLotze
-# @Last Modified time: 2020-04-04 13:23
+# @Last Modified time: 2020-04-04 14:21
 
 
 from math import isclose
@@ -43,7 +43,7 @@ def last_to_front(seq):
 def first_to_end(seq):
     return seq[1:] + seq[0]
 
-def append(seq1, seq2):
+def concatenate(seq1, seq2):
     return seq1 + seq2
 
 
@@ -52,10 +52,10 @@ def create_ruleset(terminals):
     nr_letters = len(terminals)
     ruleset = dict()
 
-    # ruleset['S'] = {'Fu S': 7/12, 'Fb Y S': 1/12, 'X': 3/12, "S + S": 1/12}
+    ruleset['S'] = {'Fu S': 7/12, 'Fb Y S': 1/12, 'X': 3/12, "S + S": 1/12}
 
     # very high probability for + for testing, above one is more balanced
-    ruleset['S'] = {'Fu S': 1/12, 'Fb Y S': 1/12, 'X': 5/12, "S + S": 5/12}
+    # ruleset['S'] = {'Fu S': 1/12, 'Fb Y S': 1/12, 'X': 5/12, "S + S": 5/12}
 
     ruleset['Fu'] = {'F1': 1/9, 'F2': 1/9, 'F3': 1/9,
                      'B1': 1/9, 'B2': 1/9, 'B3': 1/9,
@@ -71,7 +71,6 @@ def create_ruleset(terminals):
         assert(isclose(sum(dic.values()), 1))
 
     return ruleset
-
 
 
 def generator(ruleset, nr_samples, terminals, operators):
@@ -91,6 +90,32 @@ def generator(ruleset, nr_samples, terminals, operators):
             list_of_samples.append(out)
 
     return list_of_samples
+
+
+def expand_sample(sample, ruleset, terminals, operators):
+    out = []
+    cont = False
+
+    for token in sample.split()[::-1]:
+        if token in terminals or token in operators.keys():
+            out.append(token)
+            continue
+
+        cont = True
+
+        rule = choose_rule(ruleset, token)
+        out.append(rule)
+
+    out = ' '.join(out[::-1])
+
+    return out, cont
+
+
+def choose_rule(ruleset, token):
+    options = ruleset[token]
+    chosen_rule = np.random.choice(list(options.keys()), p=list(options.values()))
+
+    return chosen_rule
 
 
 def validate_seq(seq):
@@ -117,77 +142,29 @@ def remove_spaces(seq, terminals):
     return out.strip()
 
 
-
-def expand_sample(sample, ruleset, terminals, operators):
-    out = []
-    cont = False
-
-    for token in sample.split()[::-1]:
-        if token in terminals or token in operators.keys():
-            out.append(token)
-            continue
-
-        cont = True
-
-        rule = choose_rule(ruleset, token)
-        out.append(rule)
-
-    out = ' '.join(out[::-1])
-
-    return out, cont
-
-
-def choose_rule(ruleset, token):
-    options = ruleset[token]
-    chosen_rule = np.random.choice(list(options.keys()), p=list(options.values()))
-    # print(f".{chosen_rule}.")
-
-    return chosen_rule
-
-
-
 def parser(string, operators, terminals):
-    # print(f"\nstring: .{string}.")
     splitted = string.split()
-
-    # print(f"splitted, len: {splitted}, {len(splitted)}")
-
 
     if len(splitted) == 1:
         # print(f"len1 triggered on {splitted}")
         return splitted[0]
-
-    #if "+" in splitted:
-    #   print(f"+ found in following string: {string}")
-
 
     seq = splitted[-1]
     operations = splitted[:-1]
 
 
     for i, token in enumerate(operations[::-1]):
-        # print(f"seq {seq}, token: {token}")
         if token in operators.keys():
             operator_fn = operators[token]
             if operator_fn == shift:
                 seq = operator_fn(seq, shift_factor)
-            elif operator_fn == append: # append operator
-                # print(f"i: {i}")
-                # print(f"operations: {operations}")
+            elif operator_fn == concatenate:
                 prepend_seq = remove_spaces(" ".join(operations[:-i-1]), terminals)
-                # print(f"prepend_seq, seq: .{prepend_seq}., .{seq}.")
-                # print(f"token: .{token}. string: .{string}.\n")
-
                 seq = operator_fn(parser(prepend_seq, operators, terminals), parser(seq, operators, terminals))
-                # print(f"outcome of append: {seq}")
                 return seq
             else:
                 seq = operator_fn(seq)
         else: # shift is the next open
-            # print(f"token: .{token}.")
-            # print(f"string: .{string}.")
-            # print(f"operations:{operations}\n")
-
             shift_factor = terminals.index(token) + 1
 
     return seq
@@ -201,7 +178,7 @@ if __name__ == "__main__":
     operators = {'F1': forward_1, 'F2': forward_2, 'F3': forward_3,
              'B1': backward_1, 'B2': backward_2, 'B3': backward_3,
              "R": reverse, "@": last_to_front, "#": first_to_end,
-             "SHIFT": shift, "+": append}
+             "SHIFT": shift, "+": concatenate}
 
 
     samples = generator(ruleset, 100, terminals, operators)
