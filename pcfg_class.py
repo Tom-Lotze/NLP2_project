@@ -142,18 +142,22 @@ class Parser(object):
                 '+': self.concatenate}
 
     def parse_seq(self, raw_seq):
+        """
+        Parse a sequence accordint to the operator functions and return the outcome as a string
+        """
         splitted = raw_seq.split()
 
         if len(splitted) == 1:
-            # print(f'len1 triggered on {splitted}')
             return splitted[0]
 
+        # seperate the string of characters and the operations to apply on it
         seq = splitted[-1]
         operations = splitted[:-1]
 
 
         for i, token in enumerate(operations[::-1]):
             if token in self.operators.keys():
+
                 # define operator function
                 operator_fn = self.operators[token]
 
