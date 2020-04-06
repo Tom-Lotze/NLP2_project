@@ -1,26 +1,25 @@
 from math import isclose
 import numpy as np
-
+import os
 
 
 class Generator(object):
     '''
     Generate samples using the terminals and operators that are given, and the ruleset for the probabilities
     '''
-    def __init__(self, terminals, operators, nr_samples=100):
+    def __init__(self, terminals, operators):
         self.terminals = terminals
         self.operators = operators
         self.ruleset = self.create_ruleset()
-        self.nr_samples = nr_samples
 
 
-    def generate(self):
+    def generate(self, nr_samples):
         """
         generate self.nr_samples samples and return them in a list
         """
         list_of_samples = []
 
-        while len(list_of_samples) < self.nr_samples:
+        while len(list_of_samples) < nr_samples:
             sample = 'S'
             cont = True
 
@@ -237,21 +236,39 @@ class Parser(object):
 
 if __name__ == '__main__':
 
+    nr_train_samples = 15000
+    nr_test_samples = 1000
+
     ops_set = {'F1', 'F2', 'F3', 'B1', 'B2', 'B3', 'R', '@', '#', 'SHIFT', '+'}
 
     # terminals = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
     terminals = ['a','b','c','d','e','f']
 
 
-    GEN = Generator(terminals, ops_set, nr_samples=100)
+    GEN = Generator(terminals, ops_set)
     PAR = Parser(terminals)
 
-    samples = GEN.generate()
-    labels = [PAR.parse_seq(seq) for seq in samples]
+    data = {}
 
-    with open('generated_data.txt', 'w') as f:
-        for x, y in zip(samples, labels):
-            f.write(f'{x}.{y}\n')
+    os.makedirs("data", exist_ok=True)
+
+    # generate training data
+    data["src-train"] = GEN.generate(nr_samples=nr_train_samples)
+    data["tgt-train"] = [PAR.parse_seq(seq) for seq in data["src-train"]]
+
+    print("Training data generated...")
+
+    data["src-test"] = GEN.generate(nr_samples=nr_test_samples)
+    data["tgt-test"] = [PAR.parse_seq(seq) for seq in data["src-test"]]
+
+    print("Test data generated...")
+
+    for name, dataset in data.items():
+        with open(f'data/{name}.txt', 'w') as f:
+            for x in dataset:
+                f.write(f'{x}\n')
+
+    print("Data is saved to ./data")
 
 
 
