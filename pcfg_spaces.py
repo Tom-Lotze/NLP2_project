@@ -30,7 +30,7 @@ class Generator(object):
             curr_length = len(list_of_samples)
             if curr_length % 1000 == 0 and curr_length not in printed:
                 print(f"{curr_length} generated")
-                list_of_samples.add(curr_length)
+                printed.add(curr_length)
 
             sample = 'S'
             cont = True
@@ -47,7 +47,7 @@ class Generator(object):
             self.training_data = list_of_samples
 
 
-        return list_of_samples
+        return list(list_of_samples)
 
 
     def create_ruleset(self):
@@ -177,13 +177,17 @@ class Parser(object):
                     prepend_seq = ' '.join(splitted[:-i-1])
                     # concatenate the parsed first and second argument and return
                     string = operator_fn(self.parse_seq(prepend_seq), self.parse_seq(string))
-                    return string
+                    return self.format(string)
 
                 else: # unary operator
                     string = operator_fn(string)
 
 
-        return ' '.join(string)
+        return self.format(string)
+
+
+    def format(self, string):
+        return string.replace(" ", "").replace("", " ")[1:-1]
 
 
 
@@ -228,8 +232,8 @@ class Parser(object):
 
 if __name__ == '__main__':
 
-    nr_train_samples = 50000
-    nr_test_samples = 2000
+    nr_train_samples = 100
+    nr_test_samples = 0
 
     ops_set = {'F1', 'F2', 'F3', 'B1', 'B2', 'B3', 'R', '@', '#', 'SHIFT', '+'}
 
