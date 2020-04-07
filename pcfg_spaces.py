@@ -19,13 +19,19 @@ class Generator(object):
         generate self.nr_samples samples and return them in a list
         """
         list_of_samples = set()
+        printed = set()
+
         if testing:
             self.removed_duplicates = 0
 
         while len(list_of_samples) < nr_samples:
 
-            if len(list_of_samples) % 1000 == 0:
-                print(f"{len(list_of_samples)} generated")
+            # print progress
+            curr_length = len(list_of_samples)
+            if curr_length % 1000 == 0 and curr_length not in printed:
+                print(f"{curr_length} generated")
+                list_of_samples.add(curr_length)
+
             sample = 'S'
             cont = True
 
@@ -177,7 +183,7 @@ class Parser(object):
                     string = operator_fn(string)
 
 
-        return string
+        return ' '.join(string)
 
 
 
