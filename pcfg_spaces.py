@@ -14,7 +14,7 @@ class Generator(object):
         self.training_data = []
 
 
-    def generate(self, nr_samples, testing=False):
+    def generate(self, nr_samples, max_length=40, testing=False):
         """
         generate self.nr_samples samples and return them in a list
         """
@@ -232,13 +232,16 @@ class Parser(object):
 
 if __name__ == '__main__':
 
-    nr_train_samples = 100
-    nr_test_samples = 0
+    nr_train_samples = 50000
+    nr_test_samples = 2000
+    max_len=40
 
     ops_set = {'F1', 'F2', 'F3', 'B1', 'B2', 'B3', 'R', '@', '#', 'SHIFT', '+'}
 
     # terminals = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
-    terminals = ['a','b','c','d','e','f']
+    terminals = ['a','b','c','d','e','f', 'g', 'h', 'i', 'j', 'k', 'l']
+
+    nr_terminals = len(terminals)
 
 
     GEN = Generator(terminals, ops_set)
@@ -246,10 +249,13 @@ if __name__ == '__main__':
 
     data = {}
 
+    datadir = f"data/{nr_terminals}term_{max_len}max"
+
     os.makedirs("data", exist_ok=True)
+    os.makedirs(datadir, exist_ok=True)
 
     # generate training data
-    data["src-train"] = GEN.generate(nr_samples=nr_train_samples)
+    data["src-train"] = GEN.generate(nr_samples=nr_train_samples, max_length=max_len)
     data["tgt-train"] = [PAR.parse_seq(seq) for seq in data["src-train"]]
 
     print("Training data generated...")
@@ -261,11 +267,11 @@ if __name__ == '__main__':
 
 
     for name, dataset in data.items():
-        with open(f'data/{name}.txt', 'w') as f:
+        with open(f'{datadir}/{name}.txt', 'w') as f:
             for x in dataset:
                 f.write(f'{x}\n')
 
-    print("Data is saved to ./data")
+    print(f"Data is saved to {datadir}")
 
 
 
