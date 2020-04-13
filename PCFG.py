@@ -17,7 +17,6 @@ class Generator(object):
         self.training_data = []
 
 
-
     def generate(self, nr_samples):
         """
         generate nr_samples samples and return them in a list
@@ -29,7 +28,7 @@ class Generator(object):
 
             # print progress
             curr_length = len(sample_set)
-            if curr_length % 1000 == 0 and curr_length not in printed:
+            if curr_length % 5000 == 0 and curr_length not in printed:
                 print(f"{curr_length} generated")
                 printed.add(curr_length)
 
@@ -42,9 +41,12 @@ class Generator(object):
             if self.validate_seq(sample):
                 sample_set.add(sample)
 
-        self.ALL_DATA = shuffle(list(sample_set))
+        # convert to list and shuffle
+        ALL_DATA = list(sample_set)
+        shuffle(ALL_DATA)
+        self.ALL_DATA = ALL_DATA
 
-        return self.ALL_DATA
+        return ALL_DATA
 
 
     def create_ruleset(self):
@@ -107,12 +109,11 @@ class Generator(object):
         """
         Add constraints for the sequences that are generated, e.g. length, specific combinations etc.
         """
-        if self.max_length != -1 and len(seq.split()) > self.max_len:
+        if self.max_length != -1 and len(seq.split()) > self.max_length:
             return False
 
 
         return True
-
 
 
 
@@ -134,6 +135,7 @@ class Parser(object):
                 'R': self.reverse, '@': self.last_to_front,
                 '#': self.first_to_end, 'SHIFT': self.shift,
                 '+': self.concatenate}
+
 
     def parse_seq(self, raw_seq):
         """
@@ -183,7 +185,6 @@ class Parser(object):
         return string.replace(" ", "").replace("", " ")[1:-1]
 
 
-
     def shift(self, string, x):
         ''' Shift the string with x steps'''
         return ''.join([self.terminals[(self.terminals.index(char) + x) % self.nr_terminals] for char in string])
@@ -220,14 +221,13 @@ class Parser(object):
 
 
 
-
 def split_save(ALL_SRC, ALL_TGT, splits, datadir, nr_samples):
     data = {}
     train_fraction, valid_fraction, test_fraction = splits
 
     # compute split indices
-    first_split = nr_samples * train_fraction
-    second_split = first_split + valid_fraction * nr_samples
+    first_split = int(nr_samples * train_fraction)
+    second_split = int(first_split + valid_fraction * nr_samples)
 
     # split the data
     data['train_src'], data['train_tgt'] = ALL_SRC[:first_split], ALL_TGT[:first_split]
@@ -242,6 +242,7 @@ def split_save(ALL_SRC, ALL_TGT, splits, datadir, nr_samples):
     print(f"Data is saved to {datadir}")
 
     return 0
+
 
 
 if __name__ == '__main__':
@@ -260,7 +261,7 @@ if __name__ == '__main__':
     PAR = Parser(terminals)
 
     # create necessary directories
-    datadir = f"data/{nr_terminals}term_{max_len}max"
+    datadir = f"data/{nr_terminals}term_{max_length}max"
     os.makedirs("data", exist_ok=True)
     os.makedirs(datadir, exist_ok=True)
 
