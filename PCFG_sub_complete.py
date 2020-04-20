@@ -16,7 +16,6 @@ class Generator(object):
         self.ruleset = self.create_ruleset()
 
 
-
     def generate(self, nr_samples):
         """
         generate nr_samples samples and return them in a list
@@ -56,14 +55,18 @@ class Generator(object):
         nr_letters = len(self.terminals)
         ruleset = dict()
 
-        ruleset['S'] = {'Fu S': 7/12, 'Fb Y S': 1/12, 'X': 3/12, 'S + S': 1/12}
-        # very high probability for + for testing, above one is more balanced
-        # ruleset['S'] = {'Fu S': 1/12, 'Fb Y S': 1/12, 'X': 5/12, 'S + S': 5/12}
+        ruleset['S'] = {'Fu S': 5/12, "Fb W S" : 1/12, 'X': 5/12, 'S + S': 1/12}
 
-        ruleset['Fu'] = {'F1': 1/9, 'F2': 1/9, 'F3': 1/9,
-                         'B1': 1/9, 'B2': 1/9, 'B3': 1/9,
-                         'R' : 1/9, '@' : 1/9, '#' : 1/9}
+        ruleset['Fu'] = {'B1': 1/6, 'B2': 1/6, 'B3': 1/6,
+                         'R' : 1/6, '@' : 1/6, '#' : 1/6}
+
+        # ruleset['Fu'] = {'F1': 1/9, 'F2': 1/9, 'F3': 1/9,
+                         # 'B1': 1/9, 'B2': 1/9, 'B3': 1/9,
+                         # 'R' : 1/9, '@' : 1/9, '#' : 1/9}
         ruleset['Fb'] = {'SHIFT ' : 1.0}
+
+        # add w for shift factor
+        ruleset['W'] = {letter : 0.25 if letter in ["a", "b", "c"] else 0.25/(len(terminals)-3) for letter in self.terminals}
         ruleset['Y'] = {letter : 1 / nr_letters for letter in self.terminals}
         ruleset['X'] = {'X X': 3/8, 'Y': 5/8}
         ruleset['+'] = {'+': 1.0}
@@ -112,6 +115,10 @@ class Generator(object):
         if self.max_length != -1 and len(seq.split()) > self.max_length:
             return False
 
+        # make sure shift exists in the sequence
+        if not "SHIFT a" in seq and not "SHIFT b" in seq and not "SHIFT c" in seq:
+            return False
+
 
         return True
 
@@ -142,6 +149,7 @@ class Parser(object):
         Parse a sequence accordint to the operator functions and return the outcome as a string
         """
         splitted = raw_seq.split()
+        # print(f"raw_seq: {raw_seq}")
 
         if len(splitted) == 1:
             return splitted[0]
@@ -221,38 +229,16 @@ class Parser(object):
 
 
 
-def split_save(ALL_SRC, ALL_TGT, splits, datadir, nr_samples):
-    data = {}
-    train_fraction, valid_fraction, test_fraction = splits
-
-    # compute split indices
-    first_split = int(nr_samples * train_fraction)
-    second_split = int(first_split + valid_fraction * nr_samples)
-
-    # split the data
-    data['train_src'], data['train_tgt'] = ALL_SRC[:first_split], ALL_TGT[:first_split]
-    data['valid_src'], data['valid_tgt'] = ALL_SRC[first_split:second_split], ALL_TGT[first_split:second_split]
-    data['test_src'], data['test_tgt'] =  ALL_SRC[second_split:], ALL_TGT[second_split:]
-
-    for name, dataset in data.items():
-        with open(f'{datadir}/{name}.txt', 'w') as f:
-            for x in dataset:
-                f.write(f'{x}\n')
-
-    print(f"Data is saved to {datadir}")
-
-    return 0
-
-
 
 if __name__ == '__main__':
     # set variables for nr of samples and the train-test split
-    nr_samples = 100000
-    splits = [0.85, 0.05, 0.1]
+    nr_samples = 10000
     max_length = -1
 
-    # define character set
-    ops_set = {'F1', 'F2', 'F3', 'B1', 'B2', 'B3', 'R', '@', '#', 'SHIFT', '+'}
+    # define character set: Shift is removed here
+    # ops_set = {'F1', 'F2', 'F3', 'B1', 'B2', 'B3', 'R', '@', '#', '+', 'SHIFT'}
+    ops_set = {'B1', 'B2', 'B3', 'R', '@', '#', '+', 'SHIFT'}
+
     terminals = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
     nr_terminals = len(terminals)
 
@@ -261,15 +247,29 @@ if __name__ == '__main__':
     PAR = Parser(terminals)
 
     # create necessary directories
-    datadir = f"data/{nr_terminals}term_{max_length}max"
+    datadir = f"data/substitutivity/complete"
     os.makedirs("data", exist_ok=True)
     os.makedirs(datadir, exist_ok=True)
 
-    # generate data
-    ALL_SRC = GEN.generate(nr_samples=nr_samples)
-    ALL_TGT = [PAR.parse_seq(seq) for seq in ALL_SRC]
+    data = {}
 
-    rc = split_save(ALL_SRC, ALL_TGT, splits, datadir, nr_samples)
+    # generate source data
+    data["src_shift"] = GEN.generate(nr_samples=nr_samples)
+    data["src_unary"] = [seq.replace("SHIFT a", "F1").replace("SHIFT b", "F2").replace("SHIFT c", 'F3') for seq in data["src_shift"]]
+
+    # parse both and see if they are indeed the same
+    TGT_unary = [PAR.parse_seq(seq) for seq in data["src_unary"]]
+    TGT_shift = [PAR.parse_seq(seq) for seq in data["src_shift"]]
+    assert TGT_unary == TGT_shift
+    data["TGT"] = TGT_unary
+
+    # save the generated data
+    for name, dataset in data.items():
+        with open(f'{datadir}/{name}.txt', 'w') as f:
+            for x in dataset:
+                f.write(f'{x}\n')
+
+
 
 
 
