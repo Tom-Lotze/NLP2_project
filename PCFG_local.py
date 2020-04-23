@@ -2,17 +2,19 @@ from math import isclose
 import numpy as np
 import os
 from random import shuffle
-import more_itertools as mit
+
 
 
 class Generator(object):
     '''
     Generate samples using the terminals and operators that are given, and the ruleset for the probabilities
     '''
-    def __init__(self, terminals, operators, max_length):
+    def __init__(self, terminals, operators, max_length, training):
         self.terminals = terminals
         self.operators = operators
         self.max_length = max_length
+        self.training = training
+        self.training_duplicate = 0
 
         self.ruleset = self.create_ruleset()
 
@@ -45,6 +47,8 @@ class Generator(object):
         ALL_DATA = list(sample_set)
         shuffle(ALL_DATA)
         self.ALL_DATA = ALL_DATA
+
+        print("Duplicates filtered out:", self.training_duplicate)
 
         return ALL_DATA
 
@@ -115,6 +119,11 @@ class Generator(object):
         # make sure shift exists in the sequence
         if not seq.split().count("+") == 2:
             return False
+
+        if seq in self.training:
+            self.training_duplicate += 1
+            return False
+
 
 
         return True
@@ -232,14 +241,19 @@ if __name__ == '__main__':
     nr_samples = 10000
     max_length = -1
 
-    # define character set: Shift is removed here
+    # define operator set
     ops_set = {'F1', 'F2', 'F3', 'B1', 'B2', 'B3', 'R', '@', '#', '+', 'SHIFT'}
 
     terminals = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
     nr_terminals = len(terminals)
 
+    # make sure the new dataset does not contain any training instances
+    with open("data/26term_-1max/train_src.txt") as f:
+        training_data = [seq.strip() for seq in f.readlines()]
+
+
     # initiate generator and parser
-    GEN = Generator(terminals, ops_set, max_length)
+    GEN = Generator(terminals, ops_set, max_length, training_data)
     PAR = Parser(terminals)
 
     # create necessary directories

@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Author: TomLotze
-# @Date:   2020-04-16 13:04
-# @Last Modified by:   TomLotze
-# @Last Modified time: 2020-04-16 13:09
-
-
 from math import isclose
 import numpy as np
 import os
@@ -62,22 +55,16 @@ class Generator(object):
         nr_letters = len(self.terminals)
         ruleset = dict()
 
-        # ruleset['S'] = {'Fu S': 5/12, "Fb W S" : 1/12, 'X': 5/12, 'S + S': 1/12}
+        # no unary operators, or +
         ruleset['S'] = {"Fb W S" : 6/12, 'X': 6/12}
 
-        # ruleset['Fu'] = {'B1': 1/6, 'B2': 1/6, 'B3': 1/6,
-                         # 'R' : 1/6, '@' : 1/6, '#' : 1/6}
-
-        # ruleset['Fu'] = {'F1': 1/9, 'F2': 1/9, 'F3': 1/9,
-                         # 'B1': 1/9, 'B2': 1/9, 'B3': 1/9,
-                         # 'R' : 1/9, '@' : 1/9, '#' : 1/9}
+        # deviating rules
         ruleset['Fb'] = {'SHIFT ' : 1.0}
 
-        # add w for shift factor
+        # add w for shift factor, to ensure a, b or c
         ruleset['W'] = {"a" : 1/3, "b" : 1/3, "c" : 1/3}
         ruleset['Y'] = {letter : 1 / nr_letters for letter in self.terminals}
         ruleset['X'] = {'X X': 3/8, 'Y': 5/8}
-        # ruleset['+'] = {'+': 1.0}
 
         # validate the ruleset
         for dic in ruleset.values():
@@ -243,9 +230,7 @@ if __name__ == '__main__':
     nr_samples = 10000
     max_length = -1
 
-    # define character set: Shift is removed here
-    # ops_set = {'F1', 'F2', 'F3', 'B1', 'B2', 'B3', 'R', '@', '#', '+', 'SHIFT'}
-    # ops_set = {'B1', 'B2', 'B3', 'R', '@', '#', '+', 'SHIFT'}
+    # define character set: here only consisting of shift
     ops_set = {'SHIFT'}
 
     terminals = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']

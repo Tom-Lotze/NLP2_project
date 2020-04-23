@@ -8,10 +8,12 @@ class Generator(object):
     '''
     Generate samples using the terminals and operators that are given, and the ruleset for the probabilities
     '''
-    def __init__(self, terminals, operators, max_length):
+    def __init__(self, terminals, operators, max_length, training):
         self.terminals = terminals
         self.operators = operators
         self.max_length = max_length
+        self.training = training
+        self.training_duplicate = 0
 
         self.ruleset = self.create_ruleset()
 
@@ -27,7 +29,7 @@ class Generator(object):
 
             # print progress
             curr_length = len(sample_set)
-            if curr_length % 5000 == 0 and curr_length not in printed:
+            if curr_length % 50 == 0 and curr_length not in printed:
                 print(f"{curr_length} generated")
                 printed.add(curr_length)
 
@@ -45,6 +47,8 @@ class Generator(object):
         shuffle(ALL_DATA)
         self.ALL_DATA = ALL_DATA
 
+        print("Duplicates filtered out:", self.training_duplicate)
+
         return ALL_DATA
 
 
@@ -55,19 +59,16 @@ class Generator(object):
         nr_letters = len(self.terminals)
         ruleset = dict()
 
-        ruleset['S'] = {'Fu S': 5/12, "Fb W S" : 1/12, 'X': 5/12, 'S + S': 1/12}
+        ruleset['S'] = {'Fu S': 7/12, "Fb Y S" : 1/12, 'X': 4/12}
 
-        # deviating ruleset for unary operators
-        ruleset['Fu'] = {'B1': 1/6, 'B2': 1/6, 'B3': 1/6,
-                         'R' : 1/6, '@' : 1/6, '#' : 1/6}
 
+        ruleset['Fu'] = {'F1': 1/9, 'F2': 1/9, 'F3': 1/9,
+                         'B1': 1/9, 'B2': 1/9, 'B3': 1/9,
+                         'R' : 1/9, '@' : 1/9, '#' : 1/9}
         ruleset['Fb'] = {'SHIFT ' : 1.0}
 
-        # add w for shift factor
-        ruleset['W'] = {letter : 0.25 if letter in ["a", "b", "c"] else 0.25/(len(terminals)-3) for letter in self.terminals}
         ruleset['Y'] = {letter : 1 / nr_letters for letter in self.terminals}
         ruleset['X'] = {'X X': 3/8, 'Y': 5/8}
-        ruleset['+'] = {'+': 1.0}
 
         # validate the ruleset
         for dic in ruleset.values():
@@ -110,15 +111,19 @@ class Generator(object):
         """
         Add constraints for the sequences that are generated, e.g. length, specific combinations etc.
         """
-        if self.max_length != -1 and len(seq.split()) > self.max_length:
+        if seq in self.training:
+            self.training_duplicate += 1
             return False
 
-        # make sure shift exists in the sequence
-        if not "SHIFT a" in seq and not "SHIFT b" in seq and not "SHIFT c" in seq:
+        # make sure there are exactly 10 operators in the sequence
+        if self.nr_operators(seq) != 9:
             return False
-
 
         return True
+
+
+    def nr_operators(self, seq):
+        return len([i for i in seq.split() if not i.islower()])
 
 
 
@@ -226,39 +231,90 @@ class Parser(object):
         return seq1 + seq2
 
 
+def split_between_ops(seq, ops):
+    splitted = seq.split()
+
+    out = []
+
+    for i, el in enumerate(splitted):
+        if el == "SHIFT":
+            out.append(el + " " + splitted[i+1])
+        elif el in ops:
+            out.append(el)
+        elif el.islower() and splitted[i-1] == "SHIFT":
+            continue
+        else:
+            break
+
+    terms = ""
+    for term in splitted[i:]:
+        terms += f"{term} "
+
+    terms = terms[:-1]
+
+    out.append(terms)
+
+    return out
+
+
 
 
 if __name__ == '__main__':
     # set variables for nr of samples and the train-test split
-    nr_samples = 10000
+    nr_samples = 2000
     max_length = -1
 
-    # define character set: All forward operators are removed here
-    ops_set = {'B1', 'B2', 'B3', 'R', '@', '#', '+', 'SHIFT'}
+    # define operator set
+    ops_set = {'F1', 'F2', 'F3', 'B1', 'B2', 'B3', 'R', '@', '#', 'SHIFT'}
 
     terminals = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
     nr_terminals = len(terminals)
 
+    # make sure the new dataset does not contain any training instances
+    with open("data/26term_-1max/train_src.txt") as f:
+        training_data = [seq.strip() for seq in f.readlines()]
+
+
     # initiate generator and parser
-    GEN = Generator(terminals, ops_set, max_length)
+    GEN = Generator(terminals, ops_set, max_length, training_data)
     PAR = Parser(terminals)
 
     # create necessary directories
-    datadir = f"data/substitutivity/complete"
+    datadir = f"data/localism_sequential"
     os.makedirs("data", exist_ok=True)
     os.makedirs(datadir, exist_ok=True)
 
     data = {}
 
-    # generate source data
-    data["src_shift"] = GEN.generate(nr_samples=nr_samples)
-    data["src_unary"] = [seq.replace("SHIFT a", "F1").replace("SHIFT b", "F2").replace("SHIFT c", 'F3') for seq in data["src_shift"]]
+    # generate source data. NOTE: due to the strict requirements (10 ops per sequnce) this generation takes longer. Progress will be printed.
+    data["complete"] = GEN.generate(nr_samples=nr_samples)
+    data["TGT"] = [PAR.parse_seq(seq) for seq in data["complete"]]
+    data["first"] = []
+    data["second"] = []
+    data["third"] = []
+    data["fourth"] = []
+    data["fifth"] = []
+    data["sixth"] = []
+    data["seventh"] = []
+    data["eighth"] = []
+    data["nineth"] = []
+    data["tenth"] = []
 
-    # parse both and see if they are indeed the same
-    TGT_unary = [PAR.parse_seq(seq) for seq in data["src_unary"]]
-    TGT_shift = [PAR.parse_seq(seq) for seq in data["src_shift"]]
-    assert TGT_unary == TGT_shift
-    data["TGT"] = TGT_unary
+
+    for seq in data["complete"]:
+        [one, two, three, four, five, six, seven, eight, nine, ten] = split_between_ops(seq, ops_set)
+        data["first"].append(one)
+        data["second"].append(two)
+        data["third"].append(three)
+        data["fourth"].append(four)
+        data["fifth"].append(five)
+        data["sixth"].append(six)
+        data["seventh"].append(seven)
+        data["eighth"].append(eight)
+        data["nineth"].append(nine)
+        data["tenth"].append(ten)
+
+
 
     # save the generated data
     for name, dataset in data.items():

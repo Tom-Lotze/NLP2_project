@@ -3,6 +3,10 @@ import numpy as np
 import os
 from random import shuffle
 
+"""
+NB: This file is the template for all other PCFG files.
+"""
+
 
 class Generator(object):
     '''
@@ -57,8 +61,6 @@ class Generator(object):
         ruleset = dict()
 
         ruleset['S'] = {'Fu S': 7/12, 'Fb Y S': 1/12, 'X': 3/12, 'S + S': 1/12}
-        # very high probability for + for testing, above one is more balanced
-        # ruleset['S'] = {'Fu S': 1/12, 'Fb Y S': 1/12, 'X': 5/12, 'S + S': 5/12}
 
         ruleset['Fu'] = {'F1': 1/9, 'F2': 1/9, 'F3': 1/9,
                          'B1': 1/9, 'B2': 1/9, 'B3': 1/9,
@@ -119,7 +121,7 @@ class Generator(object):
 
 class Parser(object):
     """
-    Parser class,
+    Parser class, parses the sequences by iteratively applying the operators
     """
     def __init__(self, terminals):
         self.terminals = terminals
@@ -182,6 +184,7 @@ class Parser(object):
 
 
     def format(self, string):
+        # ensure spaces between all tokens
         return string.replace(" ", "").replace("", " ")[1:-1]
 
 
