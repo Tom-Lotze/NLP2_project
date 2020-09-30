@@ -2,8 +2,8 @@
 Project for Natural Language Processing 2
 
 ## Contributors
-- Tom Lotze
-- Berend Jansen
+- Tom Lotze (UvA)
+- Berend Jansen (UvA)
 
 ## Content
 This repo consists of two projects:
