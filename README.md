@@ -1,5 +1,5 @@
 # NLP2_project
-Project for Natural Language Processing 2
+Project for Natural Language Processing 2 - MSc AI @ UvA
 
 ## Contributors
 - Tom Lotze (UvA)
